@@ -1,0 +1,5 @@
+build/bin
+node_modules
+frontend/dist
+host_key.pem
+config.json
