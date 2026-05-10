@@ -94,6 +94,10 @@ func (m *Manager) LoadConfig() error {
 func (m *Manager) SaveConfig() error {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	return m.saveConfigLocked()
+}
+
+func (m *Manager) saveConfigLocked() error {
 	data, err := json.MarshalIndent(m.Bindings, "", "  ")
 	if err != nil {
 		return err
@@ -116,7 +120,7 @@ func (m *Manager) AddBinding(serialPort string, tcpPort int, password string) er
 		Password:   password,
 		Active:     false,
 	}
-	return m.SaveConfig()
+	return m.saveConfigLocked()
 }
 
 func (m *Manager) RemoveBinding(key string) error {
@@ -128,7 +132,7 @@ func (m *Manager) RemoveBinding(key string) error {
 		delete(m.Servers, key)
 	}
 	delete(m.Bindings, key)
-	return m.SaveConfig()
+	return m.saveConfigLocked()
 }
 
 func (m *Manager) StartBinding(key string) error {
