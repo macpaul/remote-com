@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react';
 import './App.css';
-import {ListPorts, GetBindings, AddBinding, RemoveBinding, StartBinding, StopBinding} from "../wailsjs/go/main/App";
+import {ListPorts, GetBindings, AddBinding, RemoveBinding, StartBinding, StopBinding, SaveConfig} from "../wailsjs/go/main/App";
 
 function App() {
     const [ports, setPorts] = useState([]);
@@ -18,6 +18,7 @@ function App() {
         lineDelay: 0
     });
     const [error, setError] = useState('');
+    const [saveStatus, setSaveStatus] = useState('');
 
     const refreshData = () => {
         ListPorts().then(setPorts).catch(err => setError("Failed to list ports: " + err));
@@ -29,6 +30,16 @@ function App() {
         const interval = setInterval(refreshData, 5000);
         return () => clearInterval(interval);
     }, []);
+
+    const handleSave = () => {
+        SaveConfig()
+            .then(() => {
+                setSaveStatus('Settings saved to settings.ini');
+                setTimeout(() => setSaveStatus(''), 3000);
+                setError('');
+            })
+            .catch(err => setError("Failed to save settings: " + err));
+    };
 
     const handleAdd = () => {
         if (!newBinding.serialPort || !newBinding.tcpPort || !newBinding.password) {
@@ -79,6 +90,10 @@ function App() {
         <div id="App">
             <header className="header">
                 <h1>Remote-COM</h1>
+                <div className="header-actions">
+                    {saveStatus && <span className="save-status">{saveStatus}</span>}
+                    <button className="btn-save" onClick={handleSave}>Save Settings</button>
+                </div>
             </header>
 
             <main className="main-content">

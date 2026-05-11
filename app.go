@@ -22,11 +22,19 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	mgr, err := engine.NewManager("config.json")
+	mgr, err := engine.NewManager("settings.ini")
 	if err != nil {
 		log.Printf("failed to initialize manager: %v", err)
 	}
 	a.manager = mgr
+}
+
+// SaveConfig saves the current configuration to the ini file
+func (a *App) SaveConfig() error {
+	if a.manager == nil {
+		return fmt.Errorf("manager not initialized")
+	}
+	return a.manager.SaveConfig()
 }
 
 // ListPorts returns a list of available serial ports

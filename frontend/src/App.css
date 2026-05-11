@@ -9,6 +9,29 @@
 .header {
     border-bottom: 2px solid #eee;
     margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.save-status {
+    color: #2ecc71;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.btn-save {
+    background-color: #27ae60;
+}
+
+.btn-save:hover {
+    background-color: #219150;
 }
 
 .header h1 {

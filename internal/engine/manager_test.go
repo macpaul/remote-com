@@ -7,7 +7,7 @@ import (
 )
 
 func TestManager_AddRemoveBinding(t *testing.T) {
-	configPath := "test_config.json"
+	configPath := "test_settings.ini"
 	defer os.Remove(configPath)
 	defer os.Remove("host_key.pem")
 
@@ -44,7 +44,7 @@ func TestManager_AddRemoveBinding(t *testing.T) {
 }
 
 func TestManager_InvalidPorts(t *testing.T) {
-	configPath := "test_invalid_ports_config.json"
+	configPath := "test_invalid_ports_settings.ini"
 	defer os.Remove(configPath)
 	defer os.Remove("host_key.pem")
 

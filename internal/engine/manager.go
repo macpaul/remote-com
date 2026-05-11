@@ -4,10 +4,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -87,9 +88,60 @@ func (m *Manager) LoadConfig() error {
 	if err != nil {
 		return err
 	}
+	
+	lines := strings.Split(string(data), "\n")
+	var currentKey string
+	var currentBinding *Binding
+	
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return json.Unmarshal(data, &m.Bindings)
+	m.Bindings = make(map[string]*Binding)
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, ";") || strings.HasPrefix(line, "#") {
+			continue
+		}
+		
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			currentKey = line[1 : len(line)-1]
+			currentBinding = &Binding{}
+			m.Bindings[currentKey] = currentBinding
+			continue
+		}
+		
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 || currentBinding == nil {
+			continue
+		}
+		
+		key := strings.TrimSpace(parts[0])
+		val := strings.TrimSpace(parts[1])
+		
+		switch key {
+		case "SerialPort":
+			currentBinding.SerialPort = val
+		case "TCPPort":
+			currentBinding.TCPPort, _ = strconv.Atoi(val)
+		case "Password":
+			currentBinding.Password = val
+		case "BaudRate":
+			currentBinding.SerialConf.BaudRate, _ = strconv.Atoi(val)
+		case "DataBits":
+			currentBinding.SerialConf.DataBits, _ = strconv.Atoi(val)
+		case "Parity":
+			currentBinding.SerialConf.Parity = val
+		case "StopBits":
+			currentBinding.SerialConf.StopBits = val
+		case "FlowControl":
+			currentBinding.SerialConf.FlowControl = val
+		case "CharDelay":
+			currentBinding.SerialConf.CharDelay, _ = strconv.Atoi(val)
+		case "LineDelay":
+			currentBinding.SerialConf.LineDelay, _ = strconv.Atoi(val)
+		}
+	}
+	return nil
 }
 
 func (m *Manager) SaveConfig() error {
@@ -99,11 +151,22 @@ func (m *Manager) SaveConfig() error {
 }
 
 func (m *Manager) saveConfigLocked() error {
-	data, err := json.MarshalIndent(m.Bindings, "", "  ")
-	if err != nil {
-		return err
+	var sb strings.Builder
+	for key, b := range m.Bindings {
+		sb.WriteString(fmt.Sprintf("[%s]\n", key))
+		sb.WriteString(fmt.Sprintf("SerialPort=%s\n", b.SerialPort))
+		sb.WriteString(fmt.Sprintf("TCPPort=%d\n", b.TCPPort))
+		sb.WriteString(fmt.Sprintf("Password=%s\n", b.Password))
+		sb.WriteString(fmt.Sprintf("BaudRate=%d\n", b.SerialConf.BaudRate))
+		sb.WriteString(fmt.Sprintf("DataBits=%d\n", b.SerialConf.DataBits))
+		sb.WriteString(fmt.Sprintf("Parity=%s\n", b.SerialConf.Parity))
+		sb.WriteString(fmt.Sprintf("StopBits=%s\n", b.SerialConf.StopBits))
+		sb.WriteString(fmt.Sprintf("FlowControl=%s\n", b.SerialConf.FlowControl))
+		sb.WriteString(fmt.Sprintf("CharDelay=%d\n", b.SerialConf.CharDelay))
+		sb.WriteString(fmt.Sprintf("LineDelay=%d\n", b.SerialConf.LineDelay))
+		sb.WriteString("\n")
 	}
-	return os.WriteFile(m.ConfigPath, data, 0644)
+	return os.WriteFile(m.ConfigPath, []byte(sb.String()), 0644)
 }
 
 func (m *Manager) AddBinding(serialPort string, tcpPort int, password string, serialConf SerialConfig) error {

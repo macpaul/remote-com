@@ -3,3 +3,4 @@ node_modules
 frontend/dist
 host_key.pem
 config.json
+settings.ini
