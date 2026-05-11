@@ -15,10 +15,11 @@ import (
 
 // Binding represents a mapping between a serial port and a TCP port
 type Binding struct {
-	SerialPort string `json:"serialPort"`
-	TCPPort    int    `json:"tcpPort"`
-	Password   string `json:"password"`
-	Active     bool   `json:"active"`
+	SerialPort string       `json:"serialPort"`
+	TCPPort    int          `json:"tcpPort"`
+	Password   string       `json:"password"`
+	SerialConf SerialConfig `json:"serialConf"`
+	Active     bool         `json:"active"`
 }
 
 // Manager handles the lifecycle of serial-ssh bindings
@@ -105,7 +106,7 @@ func (m *Manager) saveConfigLocked() error {
 	return os.WriteFile(m.ConfigPath, data, 0644)
 }
 
-func (m *Manager) AddBinding(serialPort string, tcpPort int, password string) error {
+func (m *Manager) AddBinding(serialPort string, tcpPort int, password string, serialConf SerialConfig) error {
 	if tcpPort < 1 || tcpPort > 65535 {
 		return fmt.Errorf("invalid TCP port: must be between 1 and 65535")
 	}
@@ -122,6 +123,7 @@ func (m *Manager) AddBinding(serialPort string, tcpPort int, password string) er
 		SerialPort: serialPort,
 		TCPPort:    tcpPort,
 		Password:   password,
+		SerialConf: serialConf,
 		Active:     false,
 	}
 	return m.saveConfigLocked()
@@ -152,7 +154,7 @@ func (m *Manager) StartBinding(key string) error {
 		return nil
 	}
 
-	server, err := NewSSHServer(b.TCPPort, b.SerialPort, b.Password)
+	server, err := NewSSHServer(b.TCPPort, b.SerialPort, b.Password, b.SerialConf)
 	if err != nil {
 		return err
 	}

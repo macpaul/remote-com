@@ -5,7 +5,18 @@ import {ListPorts, GetBindings, AddBinding, RemoveBinding, StartBinding, StopBin
 function App() {
     const [ports, setPorts] = useState([]);
     const [bindings, setBindings] = useState({});
-    const [newBinding, setNewBinding] = useState({serialPort: '', tcpPort: '', password: ''});
+    const [newBinding, setNewBinding] = useState({
+        serialPort: '', 
+        tcpPort: '', 
+        password: '',
+        baudRate: 9600,
+        dataBits: 8,
+        parity: 'none',
+        stopBits: '1',
+        flowControl: 'none',
+        charDelay: 0,
+        lineDelay: 0
+    });
     const [error, setError] = useState('');
 
     const refreshData = () => {
@@ -29,9 +40,31 @@ function App() {
             setError("TCP Port must be between 1 and 65535");
             return;
         }
-        AddBinding(newBinding.serialPort, port, newBinding.password)
+
+        const serialConf = {
+            baudRate: parseInt(newBinding.baudRate),
+            dataBits: parseInt(newBinding.dataBits),
+            parity: newBinding.parity,
+            stopBits: newBinding.stopBits,
+            flowControl: newBinding.flowControl,
+            charDelay: parseInt(newBinding.charDelay) || 0,
+            lineDelay: parseInt(newBinding.lineDelay) || 0
+        };
+
+        AddBinding(newBinding.serialPort, port, newBinding.password, serialConf)
             .then(() => {
-                setNewBinding({serialPort: '', tcpPort: '', password: ''});
+                setNewBinding({
+                    serialPort: '', 
+                    tcpPort: '', 
+                    password: '',
+                    baudRate: 9600,
+                    dataBits: 8,
+                    parity: 'none',
+                    stopBits: '1',
+                    flowControl: 'none',
+                    charDelay: 0,
+                    lineDelay: 0
+                });
                 refreshData();
                 setError('');
             })
@@ -54,28 +87,77 @@ function App() {
                 <section className="section">
                     <h2>Add New Binding</h2>
                     <div className="form">
-                        <select 
-                            value={newBinding.serialPort} 
-                            onChange={e => setNewBinding({...newBinding, serialPort: e.target.value})}
-                        >
-                            <option value="">Select Serial Port</option>
-                            {ports.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                        </select>
-                        <input 
-                            type="number" 
-                            placeholder="TCP Port" 
-                            min="1"
-                            max="65535"
-                            value={newBinding.tcpPort}
-                            onChange={e => setNewBinding({...newBinding, tcpPort: e.target.value})}
-                        />
-                        <input 
-                            type="password" 
-                            placeholder="SSH Password" 
-                            value={newBinding.password}
-                            onChange={e => setNewBinding({...newBinding, password: e.target.value})}
-                        />
-                        <button onClick={handleAdd}>Add</button>
+                        <div className="form-row">
+                            <select 
+                                value={newBinding.serialPort} 
+                                onChange={e => setNewBinding({...newBinding, serialPort: e.target.value})}
+                            >
+                                <option value="">Select Serial Port</option>
+                                {ports.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                            </select>
+                            <input 
+                                type="number" 
+                                placeholder="TCP Port" 
+                                min="1"
+                                max="65535"
+                                value={newBinding.tcpPort}
+                                onChange={e => setNewBinding({...newBinding, tcpPort: e.target.value})}
+                            />
+                            <input 
+                                type="password" 
+                                placeholder="SSH Password" 
+                                value={newBinding.password}
+                                onChange={e => setNewBinding({...newBinding, password: e.target.value})}
+                            />
+                        </div>
+                        <div className="form-row">
+                            <label>Speed:
+                                <select value={newBinding.baudRate} onChange={e => setNewBinding({...newBinding, baudRate: e.target.value})}>
+                                    {[110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 230400, 460800, 921600].map(b => (
+                                        <option key={b} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label>Data:
+                                <select value={newBinding.dataBits} onChange={e => setNewBinding({...newBinding, dataBits: e.target.value})}>
+                                    <option value="7">7bit</option>
+                                    <option value="8">8bit</option>
+                                </select>
+                            </label>
+                            <label>Parity:
+                                <select value={newBinding.parity} onChange={e => setNewBinding({...newBinding, parity: e.target.value})}>
+                                    <option value="none">none</option>
+                                    <option value="odd">odd</option>
+                                    <option value="even">even</option>
+                                    <option value="mark">mark</option>
+                                    <option value="space">space</option>
+                                </select>
+                            </label>
+                            <label>Stop bits:
+                                <select value={newBinding.stopBits} onChange={e => setNewBinding({...newBinding, stopBits: e.target.value})}>
+                                    <option value="1">1bit</option>
+                                    <option value="1.5">1.5bit</option>
+                                    <option value="2">2bit</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div className="form-row">
+                            <label>Flow control:
+                                <select value={newBinding.flowControl} onChange={e => setNewBinding({...newBinding, flowControl: e.target.value})}>
+                                    <option value="none">none</option>
+                                    <option value="xonxoff">Xon/Xoff</option>
+                                    <option value="rtscts">RTS/CTS</option>
+                                    <option value="dsrdtr">DSR/DTR</option>
+                                </select>
+                            </label>
+                            <label>Char Delay (ms):
+                                <input type="number" min="0" value={newBinding.charDelay} onChange={e => setNewBinding({...newBinding, charDelay: e.target.value})} />
+                            </label>
+                            <label>Line Delay (ms):
+                                <input type="number" min="0" value={newBinding.lineDelay} onChange={e => setNewBinding({...newBinding, lineDelay: e.target.value})} />
+                            </label>
+                            <button onClick={handleAdd}>Add</button>
+                        </div>
                     </div>
                 </section>
 

@@ -43,11 +43,11 @@ func (a *App) GetBindings() map[string]*engine.Binding {
 }
 
 // AddBinding adds a new serial-to-tcp binding
-func (a *App) AddBinding(serialPort string, tcpPort int, password string) error {
+func (a *App) AddBinding(serialPort string, tcpPort int, password string, serialConf engine.SerialConfig) error {
 	if a.manager == nil {
 		return fmt.Errorf("manager not initialized")
 	}
-	return a.manager.AddBinding(serialPort, tcpPort, password)
+	return a.manager.AddBinding(serialPort, tcpPort, password, serialConf)
 }
 
 // RemoveBinding removes a binding

@@ -32,16 +32,31 @@
 
 .form {
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.form select, .form input {
-    padding: 8px 12px;
+.form-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.form-row label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.form-row select, .form-row input {
+    padding: 6px 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     flex: 1;
-    min-width: 150px;
+    min-width: 100px;
 }
 
 button {

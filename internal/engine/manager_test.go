@@ -16,7 +16,8 @@ func TestManager_AddRemoveBinding(t *testing.T) {
 		t.Fatalf("Failed to create manager: %v", err)
 	}
 
-	err = m.AddBinding("COM1", 2222, "pass")
+	conf := SerialConfig{BaudRate: 9600, DataBits: 8, Parity: "none", StopBits: "1"}
+	err = m.AddBinding("COM1", 2222, "pass", conf)
 	if err != nil {
 		t.Fatalf("Failed to add binding: %v", err)
 	}
@@ -53,8 +54,9 @@ func TestManager_InvalidPorts(t *testing.T) {
 	}
 
 	invalidPorts := []int{-1, 0, 65536, 70000}
+	conf := SerialConfig{BaudRate: 9600, DataBits: 8, Parity: "none", StopBits: "1"}
 	for _, port := range invalidPorts {
-		err := m.AddBinding("COM1", port, "pass")
+		err := m.AddBinding("COM1", port, "pass", conf)
 		if err == nil {
 			t.Errorf("Expected error for port %d, but got nil", port)
 		}
@@ -62,7 +64,7 @@ func TestManager_InvalidPorts(t *testing.T) {
 
 	validPorts := []int{1, 80, 443, 1024, 65535}
 	for _, port := range validPorts {
-		err := m.AddBinding(fmt.Sprintf("COM_%d", port), port, "pass")
+		err := m.AddBinding(fmt.Sprintf("COM_%d", port), port, "pass", conf)
 		if err != nil {
 			t.Errorf("Expected no error for port %d, but got %v", port, err)
 		}

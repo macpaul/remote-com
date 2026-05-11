@@ -5,21 +5,47 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
+
+// DelayedWriter wraps an io.Writer and adds delays between characters and lines
+type DelayedWriter struct {
+	w         io.Writer
+	charDelay time.Duration
+	lineDelay time.Duration
+}
+
+func (dw *DelayedWriter) Write(p []byte) (n int, err error) {
+	for _, b := range p {
+		nw, err := dw.w.Write([]byte{b})
+		n += nw
+		if err != nil {
+			return n, err
+		}
+		if dw.charDelay > 0 {
+			time.Sleep(dw.charDelay)
+		}
+		if dw.lineDelay > 0 && b == '\n' {
+			time.Sleep(dw.lineDelay)
+		}
+	}
+	return n, nil
+}
 
 // SSHServer represents an instance of an SSH server bound to a serial port
 type SSHServer struct {
 	Port       int
 	SerialName string
+	SerialConf SerialConfig
 	Listener   net.Listener
 	Config     *ssh.ServerConfig
 	Quit       chan struct{}
 }
 
 // NewSSHServer creates a new SSH server configuration
-func NewSSHServer(tcpPort int, serialName string, password string) (*SSHServer, error) {
+func NewSSHServer(tcpPort int, serialName string, password string, serialConf SerialConfig) (*SSHServer, error) {
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			if string(pass) == password {
@@ -29,15 +55,10 @@ func NewSSHServer(tcpPort int, serialName string, password string) (*SSHServer, 
 		},
 	}
 
-	// You would typically generate or load a host key here
-	// For this prototype, we'll generate one in memory or use a fixed one
-	// In a real app, you should persist this.
-	// For now, I'll skip adding a real key to keep it simple, 
-	// but SSH REQUIRES a host key.
-	
 	return &SSHServer{
 		Port:       tcpPort,
 		SerialName: serialName,
+		SerialConf: serialConf,
 		Config:     config,
 		Quit:       make(chan struct{}),
 	}, nil
@@ -115,11 +136,18 @@ func (s *SSHServer) handleConnection(nConn net.Conn) {
 		}(requests)
 
 		// Open serial port
-		ser, err := OpenSerialPort(s.SerialName)
+		ser, err := OpenSerialPort(s.SerialName, s.SerialConf)
 		if err != nil {
 			log.Printf("failed to open serial port %s: %s", s.SerialName, err)
 			channel.Close()
 			continue
+		}
+
+		// Wrap serial port with DelayedWriter for transmit delay
+		dw := &DelayedWriter{
+			w:         ser,
+			charDelay: time.Duration(s.SerialConf.CharDelay) * time.Millisecond,
+			lineDelay: time.Duration(s.SerialConf.LineDelay) * time.Millisecond,
 		}
 
 		// Pipe data bi-directionally
@@ -129,7 +157,7 @@ func (s *SSHServer) handleConnection(nConn net.Conn) {
 			ser.Close()
 		}()
 		go func() {
-			_, _ = io.Copy(ser, channel)
+			_, _ = io.Copy(dw, channel)
 			channel.Close()
 			ser.Close()
 		}()
