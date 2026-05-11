@@ -106,6 +106,10 @@ func (m *Manager) saveConfigLocked() error {
 }
 
 func (m *Manager) AddBinding(serialPort string, tcpPort int, password string) error {
+	if tcpPort < 1 || tcpPort > 65535 {
+		return fmt.Errorf("invalid TCP port: must be between 1 and 65535")
+	}
+
 	key := fmt.Sprintf("%s:%d", serialPort, tcpPort)
 	m.mu.Lock()
 	defer m.mu.Unlock()

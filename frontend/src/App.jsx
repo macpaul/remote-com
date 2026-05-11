@@ -24,7 +24,12 @@ function App() {
             setError("All fields are required");
             return;
         }
-        AddBinding(newBinding.serialPort, parseInt(newBinding.tcpPort), newBinding.password)
+        const port = parseInt(newBinding.tcpPort);
+        if (isNaN(port) || port < 1 || port > 65535) {
+            setError("TCP Port must be between 1 and 65535");
+            return;
+        }
+        AddBinding(newBinding.serialPort, port, newBinding.password)
             .then(() => {
                 setNewBinding({serialPort: '', tcpPort: '', password: ''});
                 refreshData();
@@ -59,6 +64,8 @@ function App() {
                         <input 
                             type="number" 
                             placeholder="TCP Port" 
+                            min="1"
+                            max="65535"
                             value={newBinding.tcpPort}
                             onChange={e => setNewBinding({...newBinding, tcpPort: e.target.value})}
                         />
